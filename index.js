@@ -19,14 +19,30 @@ async function run() {
   try {
     await client.connect();
     const serviceCollection = client.db("doctorsPortal").collection("services");
+    const bookingCollection = client.db("doctorsPortal").collection("booking");
 
     //to get all services
     app.get("/treatment", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
       const result = await cursor.toArray();
-      console.log("connected");
       res.send(result);
+    });
+
+    //to post a booking
+    app.post("/booking", async (req, res) => {
+      const booking = req.body;
+      const query = {
+        treatmentName: booking.treatmentName,
+        date: booking.date,
+        patientName: booking.patientName,
+      };
+      const exist = await bookingCollection.findOne(query);
+      if (exist) {
+        return res.send({ success: false, booking: exist });
+      }
+      const result = await bookingCollection.insertOne(booking);
+      return res.send({ success: true, result });
     });
   } finally {
     //
