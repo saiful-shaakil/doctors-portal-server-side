@@ -64,11 +64,12 @@ async function run() {
       return res.send({ success: true, result });
     });
     //to get booking
-    app.get("/booking", verifyUser, async (req, res) => {
-      const email = req.query.email;
+    app.get("/booking/:email", verifyUser, async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
       const verifedEmail = req.decoded?.email;
-      const query = { patientEmail: email };
       if (verifedEmail === email) {
+        const query = { patientEmail: email };
         const result = await bookingCollection.find(query).toArray();
         res.send(result);
       } else {
