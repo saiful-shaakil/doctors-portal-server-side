@@ -66,10 +66,35 @@ async function run() {
     //to get booking
     app.get("/booking", verifyUser, async (req, res) => {
       const email = req.query.email;
-      const verifedEmail = req.decoded.email;
+      const verifedEmail = req.decoded?.email;
       const query = { patientEmail: email };
       if (verifedEmail === email) {
         const result = await bookingCollection.find(query).toArray();
+        res.send(result);
+      } else {
+        return res.status(403).send({ message: "Access Denied" });
+      }
+    });
+    //to get admin
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const admin = user.role;
+      res.send({ admin: admin });
+    });
+    //for admin
+    app.put("/user/admin/:email", verifyUser, async (req, res) => {
+      const emailOfUser = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role == "admin") {
+        const filter = { email: emailOfUser };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
         res.send(result);
       } else {
         return res.status(403).send({ message: "Access Denied" });
@@ -80,7 +105,6 @@ async function run() {
     app.put("/user/:email", async (req, res) => {
       const emailOfUser = req.params.email;
       const filter = { email: emailOfUser };
-      console.log(filter);
       const user = req.body;
       const options = { upsert: true };
       const updateDoc = {
@@ -91,6 +115,12 @@ async function run() {
         expiresIn: "1d",
       });
       res.send({ result, token });
+    });
+
+    //to get all user
+    app.get("/user", async (req, res) => {
+      const result = await userCollection.find({}).toArray();
+      res.send(result);
     });
   } finally {
     //
